@@ -27,8 +27,8 @@ public class MQListenerAndProcessorExecutorAPI {
 	@Autowired
 	ProcessEngine processEngine;
 	
-	/*@Autowired
-	DmnEngine dmnEngine;*/
+	@Autowired
+	DmnEngine dmnEngine;
 
 	@Autowired
 	protected RepositoryService repositoryService;

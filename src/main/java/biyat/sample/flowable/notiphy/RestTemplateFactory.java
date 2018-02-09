@@ -3,6 +3,7 @@ package biyat.sample.flowable.notiphy;
 import org.apache.http.HttpHost;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -16,6 +17,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 @Component
+@Qualifier("restTemplateFactory")
 public class RestTemplateFactory implements FactoryBean<RestTemplate>, InitializingBean {
 	private RestTemplate restTemplate;
 

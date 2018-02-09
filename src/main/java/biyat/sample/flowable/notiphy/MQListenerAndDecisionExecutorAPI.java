@@ -20,11 +20,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class MQListenerAndDecisionExecutorAPI {
 	
-	/*@Autowired
-	DmnEngine dmnEngine;*/
-	
 	@Autowired
-	DmnRuleService dmnRuleService;
+	DmnEngine dmnEngine;
 
 	@Autowired
 	protected RepositoryService repositoryService;
@@ -37,7 +34,7 @@ public class MQListenerAndDecisionExecutorAPI {
 		try {
 			//JSONObject jsonMessage = new JSONObject(new String(message));
 
-			/*DmnRuleService dmnRuleService = dmnEngine.getDmnRuleService();*/
+			DmnRuleService dmnRuleService = dmnEngine.getDmnRuleService();
 
 			LOG.info("Executing landing rule...");
 			/**
