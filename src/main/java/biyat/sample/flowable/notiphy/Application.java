@@ -1,24 +1,24 @@
 package biyat.sample.flowable.notiphy;
 
-import java.util.List;
-
 import javax.annotation.Resource;
 import javax.sql.DataSource;
 
 import org.apache.camel.CamelContext;
-import org.apache.camel.Exchange;
-import org.apache.camel.Processor;
-import org.apache.camel.RoutesBuilder;
-import org.apache.camel.builder.RouteBuilder;
+import org.apache.commons.lang3.StringUtils;
+import org.flowable.dmn.api.DmnEngineConfigurationApi;
+import org.flowable.dmn.api.DmnRepositoryService;
+import org.flowable.dmn.api.DmnRuleService;
 import org.flowable.dmn.engine.DmnEngine;
 import org.flowable.dmn.engine.configurator.DmnEngineConfigurator;
 import org.flowable.dmn.spring.SpringDmnEngineConfiguration;
+import org.flowable.dmn.spring.configurator.SpringDmnEngineConfigurator;
 import org.flowable.engine.ProcessEngine;
+import org.flowable.engine.ProcessEngineConfiguration;
 import org.flowable.engine.RepositoryService;
-import org.flowable.engine.TaskService;
+import org.flowable.engine.impl.cfg.ProcessEngineConfigurationImpl;
+import org.flowable.engine.impl.util.EngineServiceUtil;
 import org.flowable.spring.ProcessEngineFactoryBean;
 import org.flowable.spring.SpringProcessEngineConfiguration;
-import org.flowable.task.api.Task;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
 import org.springframework.amqp.core.DirectExchange;
@@ -69,7 +69,7 @@ public class Application {
 	}
 
 	@Resource
-	private Environment env;
+	private Environment environment;
 
 	@Autowired
 	protected PlatformTransactionManager transactionManager;
@@ -91,7 +91,24 @@ public class Application {
 		return processEngine().getRepositoryService();
 	}
 	
+	@Bean(name = "dmnEngineConfiguration")
+    public DmnEngineConfigurationApi dmnEngineConfiguration() {
+        ProcessEngineConfiguration processEngineConfiguration = processEngine().getProcessEngineConfiguration();
+        return EngineServiceUtil.getDmnEngineConfiguration(processEngineConfiguration);
+    }
+	
+	@Bean(name = "ruleService")
+    public DmnRuleService ruleService() {
+        return dmnEngineConfiguration().getDmnRuleService();
+    }
+	
 	@Bean
+    public DmnRepositoryService dmnRepositoryService() {
+        return dmnEngineConfiguration().getDmnRepositoryService();
+    }
+	
+	 
+	/*@Bean(name = "dmnEngineConfigure")
 	public SpringDmnEngineConfiguration dmnEngineConfigure() {
 		SpringDmnEngineConfiguration sdec = new SpringDmnEngineConfiguration();
 		sdec.setDataSource(dataSource);
@@ -101,25 +118,37 @@ public class Application {
 		return sdec;
 	}
 	
-	@Bean
+	@Bean(name = "dmnEngineConfigurator")
 	public DmnEngineConfigurator dmnEngineConfigurator() {
 		DmnEngineConfigurator dec = new DmnEngineConfigurator();
 		dec.setDmnEngineConfiguration(dmnEngineConfigure());
 		return dec;
-	}
 	
-	@Bean
+	
+	@Bean(name = "dmnEngine")
 	public DmnEngine getDmnEngine(SpringDmnEngineConfiguration sdec) {
 		return sdec.buildDmnEngine();
-	}
+	}}*/
+	
+	/*@Bean(name = "ruleService")
+	public DmnRuleService getDmnRuleService(SpringDmnEngineConfiguration sdec) {
+		return sdec.buildDmnEngine().getDmnRuleService();
+	}*/
 	
 
 	@Bean(name = "processEngineFactoryBean")
+    public ProcessEngineFactoryBean processEngineFactoryBean() {
+        ProcessEngineFactoryBean factoryBean = new ProcessEngineFactoryBean();
+        factoryBean.setProcessEngineConfiguration(processEngineConfiguration());
+        return factoryBean;
+    }
+	
+	/*@Bean(name = "processEngineFactoryBean")
 	public ProcessEngineFactoryBean processEngineFactoryBean() {
 		ProcessEngineFactoryBean factoryBean = new ProcessEngineFactoryBean();
 		factoryBean.setProcessEngineConfiguration(springProcessEngineConfiguration);
 		return factoryBean;
-	}
+	}*/
 
 	@Bean(name = "processEngine")
 	public ProcessEngine processEngine() {
@@ -129,126 +158,93 @@ public class Application {
 			throw new RuntimeException(e);
 		}
 	}
+	
+	 @Bean(name = "processEngineConfiguration")
+	    public ProcessEngineConfigurationImpl processEngineConfiguration() {
+	        SpringProcessEngineConfiguration processEngineConfiguration = new SpringProcessEngineConfiguration();
+	        processEngineConfiguration.setDataSource(dataSource);
+	        processEngineConfiguration.setDatabaseSchemaUpdate(environment.getProperty("engine.process.schema.update", "true"));
+	        processEngineConfiguration.setTransactionManager(transactionManager);
+	        processEngineConfiguration.setAsyncExecutorActivate(Boolean.valueOf(environment.getProperty("engine.process.asyncexecutor.activate", "true")));
+	        processEngineConfiguration.setHistory(environment.getProperty("engine.process.history.level", "full"));
+	        
+	        String emailHost = environment.getProperty("email.host");
+	        if (StringUtils.isNotEmpty(emailHost)) {
+	            processEngineConfiguration.setMailServerHost(emailHost);
+	            processEngineConfiguration.setMailServerPort(environment.getRequiredProperty("email.port", Integer.class));
 
-	/**
-	 * When configuration are initialized we want to let Camel know what do i.e all rules 
-	 * must be configured so that Camel can use them to act on the input events.
-	 * @return
-	 */
+	            Boolean useCredentials = environment.getProperty("email.useCredentials", Boolean.class);
+	            if (Boolean.TRUE.equals(useCredentials)) {
+	                processEngineConfiguration.setMailServerUsername(environment.getProperty("email.username"));
+	                processEngineConfiguration.setMailServerPassword(environment.getProperty("email.password"));
+	            }
+	            
+	            Boolean useSSL = environment.getProperty("email.useSSL", Boolean.class);
+	            if (Boolean.TRUE.equals(useSSL)) {
+	                processEngineConfiguration.setMailServerUseSSL(true);
+	            }
+	            
+	            Boolean useTLS = environment.getProperty("email.useTLS", Boolean.class);
+	            if (Boolean.TRUE.equals(useTLS)) {
+	                processEngineConfiguration.setMailServerUseTLS(useTLS);
+	            }
+	        }
+
+	        // Limit process definition cache
+	        processEngineConfiguration.setProcessDefinitionCacheLimit(environment.getProperty("flowable.process-definitions.cache.max", Integer.class, 128));
+
+	        // Enable safe XML. See http://www.flowable.org/docs/userguide/index.html#advanced.safe.bpmn.xml
+	        processEngineConfiguration.setEnableSafeBpmnXml(true);
+
+	        //processEngineConfiguration.addConfigurator(new SpringFormEngineConfigurator());
+	        
+	        SpringDmnEngineConfiguration dmnEngineConfiguration = new SpringDmnEngineConfiguration();
+	        dmnEngineConfiguration.setHistoryEnabled(true);
+	        SpringDmnEngineConfigurator dmnEngineConfigurator = new SpringDmnEngineConfigurator();
+	        dmnEngineConfigurator.setDmnEngineConfiguration(dmnEngineConfiguration);
+	        processEngineConfiguration.addConfigurator(dmnEngineConfigurator);
+	        
+	        /*
+	        SpringContentEngineConfiguration contentEngineConfiguration = new SpringContentEngineConfiguration();
+	        String contentRootFolder = environment.getProperty(PROP_FS_ROOT);
+	        if (contentRootFolder != null) {
+	            contentEngineConfiguration.setContentRootFolder(contentRootFolder);
+	        }
+
+	        Boolean createRootFolder = environment.getProperty(PROP_FS_CREATE_ROOT, Boolean.class);
+	        if (createRootFolder != null) {
+	            contentEngineConfiguration.setCreateContentRootFolder(createRootFolder);
+	        }
+
+	        SpringContentEngineConfigurator springContentEngineConfigurator = new SpringContentEngineConfigurator();
+	        springContentEngineConfigurator.setContentEngineConfiguration(contentEngineConfiguration);
+
+	        processEngineConfiguration.addConfigurator(springContentEngineConfigurator);
+	        */
+
+	        return processEngineConfiguration;
+	    }
+	
+	public final static String CAMEL_SOURCE_EXCHANGE = "biyat-tts-sigma-noti-exchange";
+	public final static String CAMEL_SOURCE_QUEUE = "biyat-tts-receiving-rabbit-camel-queue";
+	public final static String CAMEL_SOURCE_Exg_Qu_ROUTING_KEY = "tts-messages-1";
+	
+
 	@Bean
-	RoutesBuilder camelRouter() {
-		return new RouteBuilder() {
-
-			@Autowired
-			ProcessEngine processEngine;
-
-			@Autowired
-			protected RepositoryService repositoryService;
-
-			@Override
-			public void configure() throws Exception {
-
-				/**
-				 * Deploy process definition in Flowable. Provide Rules Engine Configuration.
-				 * Pass the BPMN diagram to Flowable.
-				 */
-				/*Deployment deployment = repositoryService.createDeployment()
-						.addClasspathResource("processes/TTS_Request_Workflow.bpmn20.xml").deploy();
-				ProcessDefinition processDefinition = repositoryService.createProcessDefinitionQuery()
-						.deploymentId(deployment.getId()).singleResult();
-				System.out.println("Found process Id : " + processDefinition.getId());*/
-
-				/**
-				 * Retrieve particular process from the Flowable Deployment that we need to
-				 * invoke. Prepare the input parameters for the first task. Invoke the process
-				 * by passing the input parameter to that task and getting Rutime handle and
-				 * invoking.
-				 */
-				from("rabbitmq://localhost/biyat-tts-sigma-noti-exchange?username=guest&password=guest&queue=biyat-tts-receiving-rabbit-camel-queue&routingKey=tts-messages&autoDelete=false&autoAck=false")
-						.removeHeaders("rabbitmq.*").throttle(100).timePeriodMillis(10000).process(new Processor() {
-							public void process(Exchange exchange) throws Exception {
-								/**
-								 * Any parameters needed for the process task could be passed here.
-								 */
-								exchange.getOut().getHeaders().put("source", "TTS");
-								exchange.getOut().getHeaders().put("sender", "biyat-tts");
-								exchange.getOut().getHeaders().put("ticketId", "CR23234");
-								exchange.getOut().getHeaders().put("description", "Service Down");
-								exchange.getOut().setBody(exchange.getIn().getBody());
-							}
-						})
-						/**
-						 * Make sure to call the process initiator. This is the starting point of the
-						 * process execution. To make it possible
-						 * <startEvent id="startEvent" flowable:initiator="initiator"></startEvent> must
-						 * be mentioned in the process model.
-						 */
-						.to("flowable:InitiatorCamelCallProcess")
-						/**
-						 * Below code is optional. It will be used for further processing after the
-						 * route is complete.
-						 */
-						.process(new Processor() {
-							public void process(Exchange exchange) throws Exception {
-								TaskService taskService = processEngine.getTaskService();
-								List<Task> tasks = taskService.createTaskQuery().list();
-								System.out.println("You have " + tasks.size() + " tasks:");
-								System.out.println("Task List");
-								System.out.println("=========");
-								String taskId = "";
-								for (int i = 0; i < tasks.size(); i++) {
-									System.out.println((i + 1) + ") " + tasks.get(i).getName());
-								}
-								// taskService.complete(tasks.get(0).getId());
-							}
-						});
-
-			}
-
-			/*@Override
-			public void configure() throws Exception {
-
-				from("rabbitmq://messageserver.com/process-exchange?"
-						+ "queue=order-queue"
-						+ "&routingKey=medical-supplies"
-						+ "&autoDelete=false&autoAck=true")
-						.removeHeaders("rabbitmq.*").throttle(100).timePeriodMillis(10000).process(new Processor() {
-							public void process(Exchange exchange) throws Exception {
-								exchange.getOut().getHeaders().put("rabbitmq.EXCHANGE_NAME", "test-outter-exchange");
-								exchange.getOut().getHeaders().put("rabbitmq.ROUTING_KEY", "outter-messages");
-								exchange.getOut().setBody(exchange.getIn().getBody());
-
-							}
-						})
-						.to("rabbitmq://messageserver.com/emergency-exchange?"
-								+ "&routingKey=prime-orders&autoDelete=false");
-								
-			}*/
-
-			/**
-			 * Use Camel route to get data from one Rabbit MQ Queue to another i.e. create a
-			 * bridge.
-			 * 
-			 * @throws Exception
-			 */
-			/*
-			 * @Override public void configure1() throws Exception {
-			 * 
-			 * from(
-			 * "rabbitmq://localhost/biyat-tts-sigma-noti-exchange?username=guest&password=guest&queue=biyat-tts-receiving-rabbit-camel-queue&routingKey=tts-messages&autoDelete=false&autoAck=true")
-			 * .removeHeaders("rabbitmq.*").throttle(100).timePeriodMillis(10000).process(
-			 * new Processor() { public void process(Exchange exchange) throws Exception {
-			 * exchange.getOut().getHeaders().put("rabbitmq.EXCHANGE_NAME",
-			 * "test-outter-exchange");
-			 * exchange.getOut().getHeaders().put("rabbitmq.ROUTING_KEY",
-			 * "outter-messages"); exchange.getOut().setBody(exchange.getIn().getBody());
-			 * 
-			 * } }) .to(
-			 * "rabbitmq://localhost/test-outter-exchange?username=guest&password=guest&routingKey=outter-messages&autoDelete=false"
-			 * ); }
-			 */
-		};
+	Queue camelSourceQueue() {
+		return new Queue(CAMEL_SOURCE_QUEUE, true);
 	}
+
+	@Bean
+	DirectExchange camelSourceExchange() {
+		return new DirectExchange(CAMEL_SOURCE_EXCHANGE);
+	}
+
+	@Bean
+	Binding camelBinding(Queue camelSourceQueue, DirectExchange camelSourceExchange) {
+		return BindingBuilder.bind(camelSourceQueue).to(camelSourceExchange).with(CAMEL_SOURCE_Exg_Qu_ROUTING_KEY);
+	}
+	
 
 	public final static String SFG_MESSAGE_QUEUE = "biyat-tts-receiving-rabbit-queue";
 
@@ -264,7 +260,7 @@ public class Application {
 
 	@Bean
 	Binding binding(Queue queue, DirectExchange exchange) {
-		return BindingBuilder.bind(queue).to(exchange).with(SFG_MESSAGE_QUEUE);
+		return BindingBuilder.bind(queue).to(exchange).with("tts-notiphy-messages-1");
 	}
 
 	@Bean

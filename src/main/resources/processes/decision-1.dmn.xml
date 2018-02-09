@@ -1,0 +1,28 @@
+<definitions xmlns="http://www.omg.org/spec/DMN/20151101" id="definition_81dccece-6c73-11e7-86bd-acde48001122" name="Intro Decision" namespace="http://www.flowable.org/dmn">
+  <decision id="decision-1" name="Intro Decision">
+    <decisionTable id="decisionTable_81dccece-6c73-11e7-86bd-acde48001122" hitPolicy="FIRST">
+      <input label="Name">
+        <inputExpression id="inputExpression_3" typeRef="string">
+          <text>name</text>
+        </inputExpression>
+      </input>
+      <output id="outputExpression_2" label="Output Variable" name="resultVariable" typeRef="string"></output>
+      <rule>
+        <inputEntry id="inputEntry_3_1">
+          <text><![CDATA["Flowable"]]></text>
+        </inputEntry>
+        <outputEntry id="outputEntry_2_1">
+          <text><![CDATA["is cool"]]></text>
+        </outputEntry>
+      </rule>
+      <rule>
+        <inputEntry id="inputEntry_3_2">
+          <text><![CDATA[-]]></text>
+        </inputEntry>
+        <outputEntry id="outputEntry_2_2">
+          <text><![CDATA["really?"]]></text>
+        </outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+</definitions>
