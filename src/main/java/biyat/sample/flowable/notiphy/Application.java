@@ -1,14 +1,21 @@
 package biyat.sample.flowable.notiphy;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import javax.annotation.Resource;
 import javax.sql.DataSource;
 
 import org.apache.camel.CamelContext;
 import org.flowable.dmn.engine.DmnEngine;
 import org.flowable.dmn.engine.configurator.DmnEngineConfigurator;
+import org.flowable.dmn.engine.impl.persistence.entity.DecisionTableEntity;
 import org.flowable.dmn.spring.SpringDmnEngineConfiguration;
 import org.flowable.engine.ProcessEngine;
 import org.flowable.engine.RepositoryService;
+import org.flowable.engine.common.EngineConfigurator;
 import org.flowable.spring.ProcessEngineFactoryBean;
 import org.flowable.spring.SpringProcessEngineConfiguration;
 import org.springframework.amqp.core.Binding;
@@ -19,6 +26,7 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -27,6 +35,11 @@ import org.springframework.core.env.Environment;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.flowable.engine.ManagementService;
+import org.flowable.engine.common.impl.interceptor.Command;
+import org.flowable.engine.common.impl.interceptor.CommandContext;
+import org.flowable.engine.impl.cmd.AbstractCustomSqlExecution;
+import org.flowable.engine.impl.util.CommandContextUtil;
 
 /**
  * 
@@ -71,6 +84,9 @@ public class Application {
 
 	@Autowired
 	protected SpringProcessEngineConfiguration springProcessEngineConfiguration;
+	
+	@Autowired
+	protected SpringDmnEngineConfiguration springDmnEngineConfiguration;
 
 	//@Autowired
 	//protected DmnEngineConfigurator dmnEngineConfigurator;
@@ -105,10 +121,38 @@ public class Application {
 		return sdec.buildDmnEngine();
 	}
 	
+	@Bean
+    CommandLineRunner customMybatisXmlMapper(final ManagementService managementService) {
+        return new CommandLineRunner() {
+            @Override
+            public void run(String... args) throws Exception {
+                DecisionTableEntity processDefinitionDeploymentId = managementService.executeCommand(new Command<DecisionTableEntity>() {
+                    @Override
+                    public DecisionTableEntity execute(CommandContext commandContext) {
+                    	Map<String, Object> params = new HashMap<String, Object>();
+                        params.put("decisionTableKey", "NotificationSystemInitializer");
+                        params.put("parentDeploymentId", "1");
+                        return (DecisionTableEntity) CommandContextUtil.getDbSqlSession()
+                                .selectOne("selectLatestDecisionTableByKeyAndParentDeploymentId", params);
+                        
+                        /*return (String) CommandContextUtil.getDbSqlSession()
+                                .selectOne("selectProcessDefinitionDeploymentIdByKey", "Sigma-Notification-Landing-Process-2");*/
+                        
+                    }
+                });
+
+                System.out.println("Process definition deployment id = "+processDefinitionDeploymentId);
+            }
+        };
+    }
+	
 
 	@Bean(name = "processEngineFactoryBean")
 	public ProcessEngineFactoryBean processEngineFactoryBean() {
 		ProcessEngineFactoryBean factoryBean = new ProcessEngineFactoryBean();
+		List<EngineConfigurator> configurators = new ArrayList<EngineConfigurator>();
+		configurators.add(dmnEngineConfigurator());
+		springProcessEngineConfiguration.setConfigurators(configurators);
 		factoryBean.setProcessEngineConfiguration(springProcessEngineConfiguration);
 		return factoryBean;
 	}

@@ -20,11 +20,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class MQListenerAndDecisionExecutorAPI {
 	
-	@Autowired
+	/*@Autowired
 	DmnEngine dmnEngine;
 
 	@Autowired
-	protected RepositoryService repositoryService;
+	protected RepositoryService repositoryService;*/
 	private CountDownLatch latch = new CountDownLatch(1);
 	private static final Logger LOG = Logger.getLogger(MQListenerAndDecisionExecutorAPI.class.getName());
 
@@ -34,21 +34,21 @@ public class MQListenerAndDecisionExecutorAPI {
 		try {
 			//JSONObject jsonMessage = new JSONObject(new String(message));
 
-			DmnRuleService dmnRuleService = dmnEngine.getDmnRuleService();
+			/*DmnRuleService dmnRuleService = dmnEngine.getDmnRuleService();
 
 			LOG.info("Executing landing rule...");
-			/**
+			*//**
 			 * Trying to decide which decision table is needed.
-			 */
+			 *//*
 			List<Map<String, Object>> result1 = dmnRuleService.createExecuteDecisionBuilder()
 					.decisionKey("NotificationSystemInitializer")
 					.variable("notificationSystem", "TTS")
 							.variable("notificationInterface", "Ticket Notification").execute(); //We can use jsonMessage.get("notificationSystem")
 			String intermDecisionTable = result1.get(0).get("decisionTableReference").toString();
 			LOG.info("Execute Intermediate Decision Table Rules for " + intermDecisionTable);
-			/**
+			*//**
 			 * Executing Decision Table 2
-			 */
+			 *//*
 			List<Map<String, Object>> result2 = dmnRuleService.createExecuteDecisionBuilder()
 					.decisionKey(intermDecisionTable)
 					.variable("ticketType", "CR")
@@ -61,7 +61,7 @@ public class MQListenerAndDecisionExecutorAPI {
 					.variable("provisioningStatus", "In-Service")
 					.variable("problemCode", "P60178")
 					.execute();
-			LOG.info("And the Decision is " + result2);
+			LOG.info("And the Decision is " + result2);*/
 
 			latch.countDown();
 		} catch (Exception e) {

@@ -24,14 +24,14 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class MQListenerAndProcessorExecutorAPI {
-	@Autowired
+	/*@Autowired
 	ProcessEngine processEngine;
 	
 	@Autowired
 	DmnEngine dmnEngine;
 
 	@Autowired
-	protected RepositoryService repositoryService;
+	protected RepositoryService repositoryService;*/
 	private CountDownLatch latch = new CountDownLatch(1);
 
 	public void receiveMessage(byte[] message) {
@@ -40,22 +40,22 @@ public class MQListenerAndProcessorExecutorAPI {
 		/**
 		 * Deploy process definition in Flowable. Provide Rules Engine Configuration.
 		 * Pass the BPMN diagram to Flowable.
-		 */
+		 *//*
 		Deployment deployment = repositoryService.createDeployment()
 				.addClasspathResource("processes/TTS_Request_Workflow.bpmn20.xml").deploy();
 		ProcessDefinition processDefinition = repositoryService.createProcessDefinitionQuery()
 				.deploymentId(deployment.getId()).singleResult();
-		/**
+		*//**
 		 * Prepare parameter to be passed into Flowable process/task
-		 */
+		 *//*
 		Map<String, Object> variables = new HashMap<String, Object>();
 		variables.put("source", "TTS");
 		variables.put("sender", "biyat-tts");
 		variables.put("ticketId", "CR23234");
 		variables.put("description", "Service Down");
-		/**
+		*//**
 		 * Instantiate flowable process by passing the process Id and parameters
-		 */
+		 *//*
 		ProcessInstance processInstance = processEngine.getRuntimeService()
 				.startProcessInstanceByKey("TTSRequestHandlerProcess", variables);
 
@@ -66,7 +66,7 @@ public class MQListenerAndProcessorExecutorAPI {
 		System.out.println("=========");
 		for (int i = 0; i < tasks.size(); i++) {
 			System.out.println((i + 1) + ") " + tasks.get(i).getName());
-		}
+		}*/
 		
 		latch.countDown();
 	}

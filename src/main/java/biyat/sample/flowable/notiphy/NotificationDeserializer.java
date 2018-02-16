@@ -11,6 +11,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 
 public class NotificationDeserializer extends StdDeserializer<Notification> {
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
 	public NotificationDeserializer() { 
         this(null); 
     } 
@@ -24,8 +29,8 @@ public class NotificationDeserializer extends StdDeserializer<Notification> {
       throws IOException, JsonProcessingException {
     	Map<String, Object> returnMap = new HashMap<String, Object>();
         JsonNode node = jp.getCodec().readTree(jp);        
-        /*String processDefinitionValue = node.get("processDefinitionKey").asText();
-        returnMap.put("processDefinitionKey", processDefinitionValue);*/
+        String processDefinitionValue = node.get("processDefinitionKey").asText();
+        returnMap.put("processDefinitionKey", processDefinitionValue);
         JsonNode variablesNode = node.get("variables");
         if(variablesNode.isArray()) {
         	for(JsonNode variableNode:variablesNode) {
