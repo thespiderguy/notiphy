@@ -19,17 +19,101 @@ public class CamelRouteForFlowable extends RouteBuilder{
 	
 	@Override
     public void configure() throws Exception {
-		from("rabbitmq://localhost/biyat-mintek-sigma-tracking-exchange?username=guest&password=guest&queue=biyat-mintek-receiving-rabbit-camel-queue&routingKey=mintek-messages&autoDelete=false&autoAck=false")
-		.removeHeaders("rabbitmq.*").throttle(100).timePeriodMillis(10000)/*.process(new Processor() {
+		
+		/**
+		 * Camel Route that listens from Rabbit MQ and pushes data to Flowable
+		 * Exhange=SIGMA-EXCHANGE
+		 * Queue=TTS-INCOMING-TICKETS
+		 * Routing Key=TTS-INCOMING-TICKETS-DATA
+		 */
+		from("rabbitmq://localhost/SIGMA-EXCHANGE?username=guest&password=guest&queue=TTS-INCOMING-TICKETS&routingKey=TTS-INCOMING-TICKETS-DATA&autoDelete=false&autoAck=false")
+		.removeHeaders("rabbitmq.*").throttle(100).timePeriodMillis(10000)
+		.process(new Processor() {
 			public void process(Exchange exchange) throws Exception {
 				byte[] data = (byte[]) exchange.getIn().getBody();
 				ObjectMapper objectMapper = new ObjectMapper();
 				Notification notification = objectMapper.readValue(data, Notification.class);				
 				exchange.getOut().setBody(notification.getResult());
 			}
-		})*/
-		/*.convertBodyTo(String.class)
-		.convertBodyTo(JSONObject.class)*/
+		})
+		.to("flowable:Sigma-Notification-Landing-Process?copyVariablesFromProperties=true&copyVariablesFromHeader=true");
+		
+		/**
+		 * Camel Route that listens from Rabbit MQ and pushes data to Flowable
+		 * Exhange=SIGMA-EXCHANGE
+		 * Queue=DISPATCH-UI
+		 * Routing Key=DISPATCH-WEBSITE-DATA
+		 */
+		from("rabbitmq://localhost/SIGMA-EXCHANGE?username=guest&password=guest&queue=DISPATCH-UI&routingKey=DISPATCH-WEBSITE-DATA&autoDelete=false&autoAck=false")
+		.removeHeaders("rabbitmq.*").throttle(100).timePeriodMillis(10000)
+		.process(new Processor() {
+			public void process(Exchange exchange) throws Exception {
+				byte[] data = (byte[]) exchange.getIn().getBody();
+				ObjectMapper objectMapper = new ObjectMapper();
+				Notification notification = objectMapper.readValue(data, Notification.class);				
+				exchange.getOut().setBody(notification.getResult());
+			}
+		})
+		.to("flowable:Sigma-Notification-Landing-Process?copyVariablesFromProperties=true&copyVariablesFromHeader=true");
+		
+		/**
+		 * Camel Route that listens from Rabbit MQ and pushes data to Flowable
+		 * Exhange=SIGMA-EXCHANGE
+		 * Queue=MINTEK-TRACKING
+		 * Routing Key=MINTEK-TRACKING-DATA
+		 */
+		from("rabbitmq://localhost/SIGMA-EXCHANGE?username=guest&password=guest&queue=MINTEK-TRACKING&routingKey=MINTEK-TRACKING-DATA&autoDelete=false&autoAck=false")
+		.removeHeaders("rabbitmq.*").throttle(100).timePeriodMillis(10000)
+		.process(new Processor() {
+			public void process(Exchange exchange) throws Exception {
+				byte[] data = (byte[]) exchange.getIn().getBody();
+				ObjectMapper objectMapper = new ObjectMapper();
+				Notification notification = objectMapper.readValue(data, Notification.class);				
+				exchange.getOut().setBody(notification.getResult());
+			}
+		})
+		.to("flowable:Sigma-Notification-Landing-Process?copyVariablesFromProperties=true&copyVariablesFromHeader=true");
+		
+		/**
+		 * Camel Route that listens from Rabbit MQ and pushes data to Flowable
+		 * Exhange=SIGMA-EXCHANGE
+		 * Queue=TTS-NOTIFICATIONS
+		 * Routing Key=TTS-NOTIFICATIONS-DATA
+		 */
+		from("rabbitmq://localhost/SIGMA-EXCHANGE?username=guest&password=guest&queue=TTS-NOTIFICATIONS&routingKey=TTS-NOTIFICATIONS-DATA&autoDelete=false&autoAck=false")
+		.removeHeaders("rabbitmq.*").throttle(100).timePeriodMillis(10000)
+		.process(new Processor() {
+			public void process(Exchange exchange) throws Exception {
+				byte[] data = (byte[]) exchange.getIn().getBody();
+				ObjectMapper objectMapper = new ObjectMapper();
+				Notification notification = objectMapper.readValue(data, Notification.class);				
+				exchange.getOut().setBody(notification.getResult());
+			}
+		})
+		.to("flowable:Sigma-Notification-Landing-Process?copyVariablesFromProperties=true&copyVariablesFromHeader=true");
+		
+		
+		/**
+		 * Camel Route that listens from Rabbit MQ and pushes data to Flowable
+		 * Exhange=SIGMA-EXCHANGE
+		 * Queue=BPM-ADMIN-ACTIVITIES
+		 * Routing Key=BPM-ADMIN-ACTIVITIES-DATA
+		 */
+		from("rabbitmq://localhost/SIGMA-EXCHANGE?username=guest&password=guest&queue=BPM-ADMIN-ACTIVITIES&routingKey=BPM-ADMIN-ACTIVITIES-DATA&autoDelete=false&autoAck=false")
+		.removeHeaders("rabbitmq.*").throttle(100).timePeriodMillis(10000)
+		.process(new Processor() {
+			public void process(Exchange exchange) throws Exception {
+				byte[] data = (byte[]) exchange.getIn().getBody();
+				ObjectMapper objectMapper = new ObjectMapper();
+				Notification notification = objectMapper.readValue(data, Notification.class);				
+				exchange.getOut().setBody(notification.getResult());
+			}
+		})
+		.to("flowable:Sigma-Notification-Landing-Process?copyVariablesFromProperties=true&copyVariablesFromHeader=true");
+		
+		
+		from("rabbitmq://localhost/biyat-mintek-sigma-tracking-exchange?username=guest&password=guest&queue=biyat-mintek-receiving-rabbit-camel-queue&routingKey=mintek-messages&autoDelete=false&autoAck=false")
+		.removeHeaders("rabbitmq.*").throttle(100).timePeriodMillis(10000)
 		/**
 		 * Make sure to call the process initiator. This is the starting point of the
 		 * process execution. To make it possible
@@ -51,7 +135,7 @@ public class CamelRouteForFlowable extends RouteBuilder{
 				exchange.getOut().setBody(notification.getResult());
 			}
 		})
-		.to("flowable:Sigma-Notification-Landing-Process-2?copyVariablesFromProperties=true&copyVariablesFromHeader=true");
+		.to("flowable:Sigma-Notification-Landing-Process?copyVariablesFromProperties=true&copyVariablesFromHeader=true");
 		
 		
     }
